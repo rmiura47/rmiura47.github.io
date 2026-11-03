@@ -1,0 +1,7 @@
+{
+  "_説明": "最新動画を自動で取ってくる再生リストのID。URLの list= の後ろの文字列。index.html の PROJECTS の playlist と同じIDを書く",
+  "playlists": [
+    "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda",
+    "PL1w723cdAy85KaCbnfLSZtIp9aQxMQ2hi"
+  ]
+}
