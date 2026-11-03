@@ -75,17 +75,45 @@ def _rel_date(text):
     return ""
 
 
+def _strings(node, out):
+    """表示用の文字列(text / content / simpleText)をすべて集める"""
+    if isinstance(node, dict):
+        for k in ("simpleText", "content", "text"):
+            v = node.get(k)
+            if isinstance(v, str) and v.strip():
+                out.append(v.strip())
+        for v in node.values():
+            if isinstance(v, (dict, list)):
+                _strings(v, out)
+    elif isinstance(node, list):
+        for v in node:
+            _strings(v, out)
+    return out
+
+
 def _walk(node, found):
     if isinstance(node, dict):
-        r = node.get("playlistVideoRenderer")
+        r = node.get("playlistVideoRenderer")  # 旧形式
         if isinstance(r, dict) and r.get("videoId"):
-            info = _text(r.get("videoInfo"))
             found.append({
                 "youtube": r["videoId"],
                 "title": _text(r.get("title")),
                 "client": _text(r.get("shortBylineText")),
-                "date": _rel_date(info),
+                "date": _rel_date(_text(r.get("videoInfo"))),
             })
+            return
+        r = node.get("lockupViewModel")  # 新形式
+        if isinstance(r, dict) and len(str(r.get("contentId", ""))) == 11:
+            md = (r.get("metadata") or {}).get("lockupMetadataViewModel") or {}
+            title = ((md.get("title") or {}).get("content")) or ""
+            rows = _strings(md.get("metadata"), [])
+            found.append({
+                "youtube": r["contentId"],
+                "title": title,
+                "client": rows[0] if rows else "",
+                "date": _rel_date(" ".join(rows)),
+            })
+            return
         for v in node.values():
             _walk(v, found)
     elif isinstance(node, list):
@@ -122,6 +150,12 @@ def from_page(pid):
             _walk(json.loads(m.group(1)), items)
         except Exception as ex:
             print(f"  ページの読み取りに失敗: {ex}")
+    if not items:
+        print("  ページの形式を読めなかったので動画IDだけ拾います")
+        items = [{"youtube": v, "title": "", "client": "", "date": ""}
+                 for v in re.findall(r'"videoId":"([\w-]{11})"', html)]
+    else:
+        print(f"  ページから{len(items)}本を読み取り(日付あり {sum(1 for i in items if i['date'])}本)")
     seen, uniq = set(), []
     for it in items:
         if it["youtube"] not in seen:
