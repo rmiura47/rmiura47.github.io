@@ -387,7 +387,7 @@ function render(){
   ws.forEach((w,i)=>{
     const b=document.createElement('button'); b.type="button"; b.className="work";
     b.setAttribute('aria-label',`${w.title}(${w.cat})を再生`);
-    b.innerHTML=frameHTML(w,i+20)+`<div class="meta"><span class="cat">${esc(w.cat)}</span><span class="ttl">${esc(w.title)}</span><span class="cli">${esc(w.client)}${w.role?' ・ '+esc(w.role):''}</span></div>`;
+    b.innerHTML=frameHTML(w,i+20)+`<div class="meta"><span class="cat">${esc(w.cat)}</span><span class="ttl">${esc(w.title)}</span><span class="cli">${esc(w.client)}${w.role?' - '+esc(w.role):''}</span></div>`;
     b.addEventListener('click',()=>openWork(w));
     grid.appendChild(b);
   });
@@ -397,7 +397,7 @@ const dlg=document.getElementById('dlg'), player=document.getElementById('player
 function openWork(w){
   document.getElementById('dlg-cat').textContent=w.cat.toUpperCase();
   document.getElementById('dlg-title').textContent=w.title;
-  document.getElementById('dlg-cli').textContent=[w.client,w.role].filter(Boolean).join(' ・ ');
+  document.getElementById('dlg-cli').textContent=[w.client,w.role].filter(Boolean).join(' - ');
   if(w.vimeo){
     const q = w.hash ? `h=${encodeURIComponent(w.hash)}&` : "";
     player.innerHTML=`<iframe src="https://player.vimeo.com/video/${encodeURIComponent(w.vimeo)}?${q}autoplay=1&title=0&byline=0&portrait=0&color=E5262F" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="${esc(w.title)}"></iframe>`;
