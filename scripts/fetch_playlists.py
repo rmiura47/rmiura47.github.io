@@ -48,11 +48,44 @@ def from_feed(pid):
     return items
 
 
+REL = [
+    (r"(\d+)\s*秒前", 0), (r"(\d+)\s*分前", 0), (r"(\d+)\s*時間前", 0),
+    (r"(\d+)\s*日前", 1), (r"(\d+)\s*週間前", 7), (r"(\d+)\s*(?:か月|ヶ月|カ月)前", 30), (r"(\d+)\s*年前", 365),
+    (r"(\d+)\s*seconds? ago", 0), (r"(\d+)\s*minutes? ago", 0), (r"(\d+)\s*hours? ago", 0),
+    (r"(\d+)\s*days? ago", 1), (r"(\d+)\s*weeks? ago", 7), (r"(\d+)\s*months? ago", 30), (r"(\d+)\s*years? ago", 365),
+]
+
+
+def _text(t):
+    if not isinstance(t, dict):
+        return ""
+    if "simpleText" in t:
+        return t["simpleText"]
+    return "".join(r.get("text", "") for r in t.get("runs", []))
+
+
+def _rel_date(text):
+    """「3日前」「2 weeks ago」などからおおよその投稿日を出す(並び順用)"""
+    import datetime
+    for pat, days in REL:
+        m = re.search(pat, text)
+        if m:
+            d = datetime.date.today() - datetime.timedelta(days=int(m.group(1)) * days)
+            return d.isoformat()
+    return ""
+
+
 def _walk(node, found):
     if isinstance(node, dict):
         r = node.get("playlistVideoRenderer")
         if isinstance(r, dict) and r.get("videoId"):
-            found.append(r["videoId"])
+            info = _text(r.get("videoInfo"))
+            found.append({
+                "youtube": r["videoId"],
+                "title": _text(r.get("title")),
+                "client": _text(r.get("shortBylineText")),
+                "date": _rel_date(info),
+            })
         for v in node.values():
             _walk(v, found)
     elif isinstance(node, list):
@@ -82,28 +115,31 @@ def video_info(vid):
 
 def from_page(pid):
     html = get(PLAYLIST.format(pid))
-    ids = []
+    items = []
     m = re.search(r"var ytInitialData = (\{.*?\});</script>", html, re.S)
     if m:
         try:
-            _walk(json.loads(m.group(1)), ids)
+            _walk(json.loads(m.group(1)), items)
+        except Exception as ex:
+            print(f"  ページの読み取りに失敗: {ex}")
+    seen, uniq = set(), []
+    for it in items:
+        if it["youtube"] not in seen:
+            seen.add(it["youtube"])
+            uniq.append(it)
+    # タイトルか日付が欠けている動画だけ、動画ページから補う
+    for it in uniq[:MAX_PER_PLAYLIST]:
+        if it["title"] and it["date"]:
+            continue
+        try:
+            extra = video_info(it["youtube"])
+            for k in ("title", "client", "date"):
+                if not it[k] and extra[k]:
+                    it[k] = extra[k]
         except Exception:
             pass
-    if not ids:  # 形式が変わっていたら、ページ内の動画IDを順に拾う
-        ids = re.findall(r'"videoId":"([\w-]{11})"', html)
-    seen, uniq = set(), []
-    for v in ids:
-        if v not in seen:
-            seen.add(v)
-            uniq.append(v)
-    items = []
-    for vid in uniq[:MAX_PER_PLAYLIST]:
-        try:
-            items.append(video_info(vid))
-        except Exception as ex:
-            print(f"  動画 {vid} の情報を取れませんでした: {ex}")
         time.sleep(0.5)
-    return items
+    return uniq[:MAX_PER_PLAYLIST]
 
 
 def fetch(pid):
