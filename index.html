@@ -110,6 +110,7 @@ section{scroll-margin-top:24px}
 .pthumbs .frame .corner{width:10px;height:10px}
 .pthumbs .frame .play{width:38px;height:38px;margin:-19px 0 0 -19px}
 .pthumbs .ttl{font-size:12px;line-height:1.5;color:var(--mute);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.more{margin:4px 0 0;font-size:13px;color:var(--mute);letter-spacing:.06em}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:36px 24px}
 .work{display:flex;flex-direction:column;gap:12px;background:none;border:0;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit;min-width:0}
 .frame{position:relative;aspect-ratio:16/9;max-width:100%;background:var(--panel);overflow:hidden}
@@ -211,6 +212,7 @@ dialog::backdrop{background:rgba(0,0,0,.86)}
     <div class="block" id="single-block">
       <h3 class="sub mono">SINGLES</h3>
       <div class="grid" id="grid"></div>
+      <p class="more" id="mv-more">ほか、MV・リリックビデオ多数</p>
     </div>
   </section>
 
@@ -308,11 +310,11 @@ const PROJECTS = [
 const SINGLES = [
   {cat:"Music Video", title:"BANGERS「GAMI GAMI」Visualizer Video", client:"BANGERS", role:"監督・撮影・編集", youtube:"bIhQtEHgSm0"},
   {cat:"Documentary", title:"にきちゃんのドキュメンタリー #5 @JAM EXPO 2026出演の裏側", client:"アップアップガールズ", role:"編集", youtube:"nZ5-6wUTLcM"},
-  {cat:"Lyric Video", title:"かたこと「恋をして」Lyric Video", client:"かたこと", role:"企画・デザイン・編集・3DCG", youtube:"26umQwAqHRk"},
+  {cat:"Music Video", title:"かたこと「恋をして」Lyric Video", client:"かたこと", role:"企画・デザイン・編集・3DCG", youtube:"26umQwAqHRk"},
 ];
 
 // ジャンルの並び順。作品が1つもないジャンルはボタンを出さない
-const ORDER = ["Live Film","Streaming","YouTube","Documentary","Music Video","Lyric Video","Live Visuals","Motion Graphics"];
+const ORDER = ["Live Film","Streaming","YouTube","Documentary","Music Video","Live Visuals","Motion Graphics"];
 
 let AUTO = [];
 const CATS = ["ALL", ...ORDER.filter(c => PROJECTS.some(p=>p.cat===c) || SINGLES.some(w=>w.cat===c))];
@@ -356,6 +358,7 @@ function render(){
   count.textContent=`${pad(ps.length)} SERIES ・ ${pad(ws.length)} SINGLES`;
   document.getElementById('proj-block').hidden=!ps.length;
   document.getElementById('single-block').hidden=!ws.length;
+  document.getElementById('mv-more').hidden=!(current==="ALL"||current==="Music Video");
 
   projBox.innerHTML="";
   ps.forEach((p,pi)=>{
