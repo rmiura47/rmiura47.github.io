@@ -173,7 +173,13 @@ def from_page(pid):
         except Exception:
             pass
         time.sleep(0.5)
-    return uniq[:MAX_PER_PLAYLIST]
+    uniq = uniq[:MAX_PER_PLAYLIST]
+    # 日付が大まかで同じ日になる回は、再生リストの並び順で新しい回を先にする
+    dated = [it["date"] for it in uniq if it["date"]]
+    ascending = len(dated) < 2 or dated[0] <= dated[-1]
+    for i, it in enumerate(uniq):
+        it["order"] = i if ascending else -i
+    return uniq
 
 
 def fetch(pid):
@@ -203,7 +209,7 @@ def main():
     if not out:
         # 1本も取れなかったときは前回のデータを消さない
         sys.exit(1)
-    out.sort(key=lambda w: w["date"], reverse=True)
+    out.sort(key=lambda w: (w["date"], w.get("order", 0)), reverse=True)
     (ROOT / "works-auto.json").write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{len(out)}本を書き出しました")
 
