@@ -323,12 +323,15 @@ const PROJECTS = [
 // 主なYouTube動画は videos.json に書く(タイトルは自動取得)。ここはそれ以外を手で書く場所
 // YouTube:youtube に動画ID / Vimeo:vimeo にURLの数字(限定公開なら hash も)
 const SINGLES = [
-  {artists:["BANGERS"], title:"BANGERS「GAMI GAMI」Visualizer Video", role:"監督・撮影・編集", date:"2026-04-16", youtube:"bIhQtEHgSm0"},
+  {cat:"mv", artists:["ラストランプ"], title:"ラストランプ『白夏』 - Official Music Video", role:"MV制作", date:"2025-07-09", youtube:"NtgwFObL8g4"},
+  {cat:"mv", artists:["ラストランプ"], title:"ラストランプ『Kaleidoscope』- Official Music Video", role:"MV制作(撮影・編集・LEDスクリーン映像)", date:"2025-04-27", youtube:"UtckXlrjfHI"},
+  {cat:"mv", artists:["BANGERS"], title:"BANGERS「GAMI GAMI」Visualizer Video", role:"監督・撮影・編集", date:"2026-04-16", youtube:"bIhQtEHgSm0"},
+  {cat:"mv", artists:["かたこと"], title:"かたこと「恋をして」Lyric Video", role:"企画・デザイン・編集・3DCG", date:"2024-02-14", youtube:"26umQwAqHRk"},
   {artists:["アップアップガールズ"], title:"にきちゃんのドキュメンタリー #5 @JAM EXPO 2026出演の裏側", role:"編集", date:"2026-10-14", youtube:"nZ5-6wUTLcM"},
-  {artists:["かたこと"], title:"かたこと「恋をして」Lyric Video", role:"企画・デザイン・編集・3DCG", date:"2024-02-14", youtube:"26umQwAqHRk"},
 ];
 // 作品の大きな括り(どう関わったか)。role にキーワードが入っていればその括りに入る(cat を書けば手動で指定も可)
 const CATEGORIES = [
+  {id:"mv",   name:"MUSIC VIDEO",     sub:"MV制作",                             match:r=>/MV/.test(r), defaultRole:"MV制作"},
   {id:"mg",   name:"MOTION GRAPHICS", sub:"映像制作・モーショングラフィックス", match:r=>/モーショングラフィックス|3DCG|映像制作/.test(r), defaultRole:"映像制作・モーショングラフィックス"},
   {id:"film", name:"FILM & EDIT",     sub:"撮影・編集",                         match:()=>true, defaultRole:"撮影・編集"},
 ];
