@@ -128,17 +128,44 @@ def _unescape(s):
         return s
 
 
+def _post_json(url, payload):
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(), headers={**HEADERS, "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8", "replace"))
+
+
 def video_info(vid):
-    html = get(WATCH.format(vid))
-    date = re.search(r'"(?:publishDate|uploadDate)":"(\d{4}-\d{2}-\d{2})', html)
-    title = re.search(r'"videoDetails":\{"videoId":"[^"]+","title":"((?:[^"\\]|\\.)*)"', html)
-    owner = re.search(r'"ownerChannelName":"((?:[^"\\]|\\.)*)"', html)
-    return {
-        "youtube": vid,
-        "title": _unescape(title.group(1)) if title else "",
-        "client": _unescape(owner.group(1)) if owner else "",
-        "date": date.group(1) if date else "",
-    }
+    """タイトル・チャンネル名・公開日を取る。oEmbed → InnerTube(player) → 動画ページの順に試す"""
+    info = {"youtube": vid, "title": "", "client": "", "date": ""}
+    try:
+        o = json.loads(get(f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={vid}&format=json"))
+        info["title"], info["client"] = o.get("title", ""), o.get("author_name", "")
+    except Exception as ex:
+        print(f"  oEmbed失敗 {vid}: {ex}")
+    for client in ({"clientName": "WEB", "clientVersion": "2.20250101.00.00"},
+                   {"clientName": "MWEB", "clientVersion": "2.20250101.00.00"}):
+        if info["date"]:
+            break
+        try:
+            d = _post_json("https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
+                           {"videoId": vid, "context": {"client": {**client, "hl": "ja", "gl": "JP"}}})
+            mf = (d.get("microformat") or {}).get("playerMicroformatRenderer") or {}
+            info["date"] = (mf.get("publishDate") or mf.get("uploadDate") or "")[:10]
+            vd = d.get("videoDetails") or {}
+            info["title"] = info["title"] or vd.get("title", "")
+            info["client"] = info["client"] or vd.get("author", "")
+        except Exception as ex:
+            print(f"  player失敗 {vid}: {ex}")
+    if not info["date"]:
+        try:
+            html = get(WATCH.format(vid))
+            m = re.search(r'"(?:publishDate|uploadDate)":"(\d{4}-\d{2}-\d{2})', html) or \
+                re.search(r'itemprop="(?:datePublished|uploadDate)" content="(\d{4}-\d{2}-\d{2})', html)
+            if m:
+                info["date"] = m.group(1)
+        except Exception as ex:
+            print(f"  動画ページ失敗 {vid}: {ex}")
+    return info
 
 
 def from_page(pid):
@@ -223,6 +250,8 @@ def main():
             try:
                 info = video_info(vid)
                 out.append({"playlist": "", "single": True, **info}); got += 1
+                if not (info["title"] and info["date"]):
+                    print(f"  情報が足りない: {vid} title={bool(info['title'])} date={bool(info['date'])}")
             except Exception as ex:
                 failed.append(f"動画 {vid}: {ex}")
             time.sleep(0.4)
