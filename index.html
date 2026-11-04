@@ -364,7 +364,12 @@ function singles(){
 const catOf=w=>w.cat ? CATEGORIES.find(c=>c.id===w.cat) : CATEGORIES.find(c=>c.match(w.role||''));
 function videosOf(p){
   if(p.picks && p.picks.length) return p.picks.map(v=>typeof v==="string"?{youtube:v}:v);
-  if(p.playlist) return AUTO.filter(a=>a.playlist===p.playlist).slice(0,3);
+  if(p.playlist){
+    const ep=w=>{ const m=String(w.title||'').match(/#\s*(\d+)/); return m?+m[1]:-1; };
+    return AUTO.filter(a=>a.playlist===p.playlist)
+      .sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')) || ep(y)-ep(x))
+      .slice(0,3);
+  }
   return [];
 }
 const TABS=()=>["ALL", SERIES, ...CATEGORIES.filter(c=>singles().some(w=>catOf(w)===c))].map(t=>t==="ALL"?{id:"ALL",name:"ALL"}:t);

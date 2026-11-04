@@ -210,13 +210,14 @@ def from_page(pid):
 
 
 def fetch(pid):
+    """再生リストのページから取る(最大60本・新しい回も含む)。だめならフィード(最初の15本だけ)"""
     try:
-        items = from_feed(pid)
+        items = from_page(pid)
         if items:
             return items
-    except (urllib.error.HTTPError, urllib.error.URLError, ET.ParseError) as ex:
-        print(f"{pid}: フィードが使えないのでページから取得します({ex})")
-    return from_page(pid)
+    except Exception as ex:
+        print(f"{pid}: ページから取れないのでフィードを使います({ex})")
+    return from_feed(pid)
 
 
 def main():
