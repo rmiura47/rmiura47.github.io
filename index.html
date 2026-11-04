@@ -115,6 +115,13 @@ section{scroll-margin-top:24px}
 .prole{font-size:14px;color:#C9C9C6;margin-top:6px}
 .pperiod{font:12px var(--f-mono);color:var(--mute);letter-spacing:.06em}
 .plink{margin-top:10px;font:500 12px var(--f-mono);letter-spacing:.1em;color:var(--fg);align-self:flex-start}
+.pslider{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;min-width:0}
+.pslider.paged{grid-template-columns:36px minmax(0,1fr) 36px;align-items:start}
+.pslider .pthumbs{min-width:0}
+.parrow{height:56px;width:36px;display:flex;align-items:center;justify-content:center;font:400 26px/1 var(--f-display);color:var(--fg);background:transparent;border:1px solid var(--line);cursor:pointer;padding:0}
+.parrow:hover:not(:disabled){border-color:var(--red);color:var(--red)}
+.parrow:disabled{opacity:.25;cursor:default}
+.ppage{grid-column:1/-1;justify-self:center;font-size:12px;color:var(--mute);letter-spacing:.1em}
 .pthumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-content:start}
 .pthumbs .work{gap:6px}
 .pthumbs .frame .tc{display:none}
@@ -367,8 +374,7 @@ function videosOf(p){
   if(p.playlist){
     const ep=w=>{ const m=String(w.title||'').match(/#\s*(\d+)/); return m?+m[1]:-1; };
     return AUTO.filter(a=>a.playlist===p.playlist)
-      .sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')) || ep(y)-ep(x))
-      .slice(0,3);
+      .sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')) || ep(y)-ep(x));
   }
   return [];
 }
@@ -389,9 +395,11 @@ function renderFilters(){
   });
 }
 
+const PAGE={};  // シリーズごとの表示ページ
 function projectHTML(p,pi){
   const el=document.createElement('article'); el.className="proj";
   const vids=videosOf(p);
+  const pages=Math.max(1,Math.ceil(vids.length/3));
   el.innerHTML=`<div class="pinfo">
       <span class="badge ${p.status==='onair'?'on':''}">${p.status==='onair'?'ON AIR':'ARCHIVE'}</span>
       <span class="pname2">${esc(p.name)}</span>
@@ -399,16 +407,39 @@ function projectHTML(p,pi){
       <span class="prole">${esc(p.role)}</span>
       ${p.period?`<span class="pperiod">${esc(p.period)}</span>`:''}
       <a class="plink" href="${esc(p.url)}" target="_blank" rel="noopener">${p.url.includes('playlist')?'再生リストを見る':'チャンネルを見る'} ↗</a>
-    </div><div class="pthumbs"></div>`;
-  const tb=el.querySelector('.pthumbs');
-  (vids.length?vids:[{},{},{}]).slice(0,3).forEach((v,vi)=>{
-    if(!v.youtube && !v.vimeo){ const d=document.createElement('div'); d.className="work"; d.innerHTML=`<div class="frame">${PH}</div>`; tb.appendChild(d); return; }
-    const b=document.createElement('button'); b.type="button"; b.className="work";
-    b.setAttribute('aria-label',`${v.title||p.name}を再生`);
-    b.innerHTML=frameHTML(v,pi*3+vi)+(v.title?`<span class="ttl">${esc(v.title)}</span>`:'');
-    b.addEventListener('click',()=>openWork({...v, title:v.title||p.name, client:p.artist||p.name, role:p.role}));
-    tb.appendChild(b);
-  });
+    </div>
+    <div class="pslider ${pages>1?'paged':''}">
+      ${pages>1?`<button type="button" class="parrow" data-d="-1" aria-label="${esc(p.name)}の新しい回へ">‹</button>`:''}
+      <div class="pthumbs"></div>
+      ${pages>1?`<button type="button" class="parrow" data-d="1" aria-label="${esc(p.name)}の前の回へ">›</button>
+      <span class="ppage mono" aria-live="polite"></span>`:''}
+    </div>`;
+  const tb=el.querySelector('.pthumbs'), pg=el.querySelector('.ppage');
+  function draw(){
+    const page=Math.min(PAGE[p.name]||0,pages-1);
+    tb.innerHTML="";
+    const slots=vids.length?vids.slice(page*3,page*3+3):[{},{},{}];
+    while(slots.length<3) slots.push({});
+    slots.forEach((v,vi)=>{
+      if(!v.youtube && !v.vimeo){ const d=document.createElement('div'); d.className="work"; d.innerHTML=vids.length?'':`<div class="frame">${PH}</div>`; tb.appendChild(d); return; }
+      const b=document.createElement('button'); b.type="button"; b.className="work";
+      b.setAttribute('aria-label',`${v.title||p.name}を再生`);
+      b.innerHTML=frameHTML(v,pi*3+vi)+(v.title?`<span class="ttl">${esc(v.title)}</span>`:'');
+      b.addEventListener('click',()=>openWork({...v, title:v.title||p.name, client:p.artist||p.name, role:p.role}));
+      tb.appendChild(b);
+    });
+    if(pg){
+      pg.textContent=`${pad(page+1)} / ${pad(pages)}`;
+      el.querySelectorAll('.parrow').forEach(btn=>{ const d=+btn.dataset.d; btn.disabled=(d<0&&page===0)||(d>0&&page===pages-1); });
+    }
+  }
+  // 矢印の高さをサムネの高さに合わせる
+  const fit=()=>{ const f=tb.querySelector('.frame'); if(f) el.querySelectorAll('.parrow').forEach(a=>a.style.height=f.getBoundingClientRect().height+'px'); };
+  if(pages>1){ requestAnimationFrame(fit); addEventListener('resize',fit); }
+  el.querySelectorAll('.parrow').forEach(btn=>btn.addEventListener('click',()=>{
+    PAGE[p.name]=Math.max(0,Math.min(pages-1,(PAGE[p.name]||0)+(+btn.dataset.d))); draw();
+  }));
+  draw();
   return el;
 }
 function catHead(name,sub,n){ return `<div class="chead"><h3 class="cname">${esc(name)}</h3><span class="csub">${esc(sub)}<b>${n}</b></span></div>`; }
