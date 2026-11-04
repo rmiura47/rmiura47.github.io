@@ -235,26 +235,36 @@ def main():
     prev = {}
     try:
         for w in json.loads((ROOT / "works-auto.json").read_text(encoding="utf-8")):
-            if w.get("single") and w.get("title") and w.get("date"):
+            if w.get("single") and w.get("title"):
                 prev[w["youtube"]] = w
     except Exception:
         pass
     vconf_path = ROOT / "videos.json"
     if vconf_path.exists():
-        vids = json.loads(vconf_path.read_text(encoding="utf-8")).get("videos", [])
+        vconf = json.loads(vconf_path.read_text(encoding="utf-8"))
+        vids = vconf.get("videos", [])
         got = 0
-        for vid in vids:
-            if vid in prev:
-                out.append(prev[vid]); got += 1
-                continue
-            try:
-                info = video_info(vid)
-                out.append({"playlist": "", "single": True, **info}); got += 1
-                if not (info["title"] and info["date"]):
-                    print(f"  情報が足りない: {vid} title={bool(info['title'])} date={bool(info['date'])}")
-            except Exception as ex:
-                failed.append(f"動画 {vid}: {ex}")
-            time.sleep(0.4)
+        for v in vids:
+            v = {"id": v} if isinstance(v, str) else v
+            vid = v["id"]
+            base = prev.get(vid)
+            if not base or not base.get("title"):
+                try:
+                    base = {"playlist": "", "single": True, **video_info(vid)}
+                except Exception as ex:
+                    failed.append(f"動画 {vid}: {ex}")
+                    continue
+                time.sleep(0.4)
+            item = dict(base)
+            if v.get("date"):
+                item["date"] = v["date"]          # 手動の公開日を優先
+            cmap = vconf.get("channel_artist", {})
+            item["artists"] = v.get("artists") or [cmap.get(item.get("client", ""), item.get("client", ""))]
+            if v.get("role"):
+                item["role"] = v["role"]
+            else:
+                item.pop("role", None)
+            out.append(item); got += 1
         print(f"単発の動画: {got}/{len(vids)}本")
     for f in failed:
         print("取得に失敗:", f)

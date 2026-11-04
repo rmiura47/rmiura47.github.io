@@ -88,7 +88,13 @@ section{scroll-margin-top:24px}
 .filters button[aria-pressed="true"]:hover{color:var(--ink)}
 
 /* works */
-.block{display:flex;flex-direction:column;gap:20px;margin-bottom:56px}
+.artist{display:flex;flex-direction:column;gap:22px;margin-bottom:72px}
+.ahead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.aname{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(22px,3.2vw,32px);letter-spacing:.08em;line-height:1.2}
+.acount{font-size:12px;color:var(--mute)}
+.wdate{font:12px var(--f-mono);color:var(--mute);letter-spacing:.06em}
+.showmore{align-self:center;font:500 12px var(--f-mono);letter-spacing:.12em;color:var(--fg);background:transparent;border:1px solid var(--line);padding:12px 22px;cursor:pointer;min-height:44px}
+.showmore:hover{border-color:var(--mute)}
 .sub{margin:0;font-size:12px;font-weight:500;color:var(--mute);letter-spacing:.2em}
 .projects{display:flex;flex-direction:column}
 .proj{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px 36px;padding-block:28px;border-top:1px solid var(--line)}
@@ -203,16 +209,9 @@ dialog::backdrop{background:rgba(0,0,0,.86)}
 
   <section id="works">
     <div class="sh"><h2>WORKS</h2><span class="mono" id="count"></span></div>
-    <div class="filters" role="group" aria-label="ジャンルで絞り込む" id="filters"></div>
-    <div class="block" id="proj-block">
-      <h3 class="sub mono">CHANNELS &amp; SERIES</h3>
-      <div class="projects" id="projects"></div>
-    </div>
-    <div class="block" id="single-block">
-      <h3 class="sub mono">SINGLES</h3>
-      <div class="grid" id="grid"></div>
-      <p class="more" id="mv-more">ほか、MV・リリックビデオ多数</p>
-    </div>
+    <div class="filters" role="group" aria-label="アーティストで絞り込む" id="filters"></div>
+    <div id="artists"></div>
+    <p class="more">ほか、MV・リリックビデオ・YouTube動画多数</p>
   </section>
 
   <section id="about" style="margin-top:96px">
@@ -302,25 +301,23 @@ const PROJECTS = [
    url:"https://www.youtube.com/@bakibakidt"},
 ];
 
-// ===== 単発の作品 =====
-// YouTube:youtube に動画ID(https://youtu.be/AbCdEf → "AbCdEf")
-// Vimeo:vimeo にURLの数字。限定公開なら hash に共有URL末尾の英数字も
+// ===== 単発の作品(手動)=====
+// 主なYouTube動画は videos.json に書く(タイトルは自動取得)。ここはそれ以外を手で書く場所
+// YouTube:youtube に動画ID / Vimeo:vimeo にURLの数字(限定公開なら hash も)
 const SINGLES = [
-  {cat:"Music Video", title:"BANGERS「GAMI GAMI」Visualizer Video", client:"BANGERS", role:"監督・撮影・編集", youtube:"bIhQtEHgSm0"},
-  {cat:"Documentary", title:"にきちゃんのドキュメンタリー #5 @JAM EXPO 2026出演の裏側", client:"アップアップガールズ", role:"編集", youtube:"nZ5-6wUTLcM"},
-  {cat:"Music Video", title:"かたこと「恋をして」Lyric Video", client:"かたこと", role:"企画・デザイン・編集・3DCG", youtube:"26umQwAqHRk"},
+  {artists:["BANGERS"], title:"BANGERS「GAMI GAMI」Visualizer Video", role:"監督・撮影・編集", date:"2026-04-16", youtube:"bIhQtEHgSm0"},
+  {artists:["アップアップガールズ"], title:"にきちゃんのドキュメンタリー #5 @JAM EXPO 2026出演の裏側", role:"編集", date:"2026-10-14", youtube:"nZ5-6wUTLcM"},
+  {artists:["かたこと"], title:"かたこと「恋をして」Lyric Video", role:"企画・デザイン・編集・3DCG", date:"2024-02-14", youtube:"26umQwAqHRk"},
 ];
+const OTHER = "OTHER CHANNELS";   // アーティストに属さないチャンネル
+const PREVIEW = 6;                // 一覧(ALL)で各アーティストに最初に出す本数
 
-// ジャンルの並び順。作品が1つもないジャンルはボタンを出さない
-const ORDER = ["Live Film","Streaming","YouTube","Documentary","Music Video","Live Visuals","Motion Graphics"];
-
-let AUTO = [];
-const CATS = ["ALL", ...ORDER.filter(c => PROJECTS.some(p=>p.cat===c) || SINGLES.some(w=>w.cat===c))];
-const grid=document.getElementById('grid'), projBox=document.getElementById('projects'), filters=document.getElementById('filters'), count=document.getElementById('count');
-let current="ALL";
-try{ const s=localStorage.getItem('works-filter'); if(s && CATS.includes(s)) current=s; }catch(e){}
+let AUTO = [], ARTISTS = [], current = "ALL";
+const open = {};  // 「もっと見る」を開いたアーティスト
+const box=document.getElementById('artists'), filters=document.getElementById('filters'), count=document.getElementById('count');
 const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,'0');
+const fmtDate=d=>d?d.slice(0,10).replace(/-/g,'.'):'';
 
 function tcFor(i){ const f=(i*7+3)%24, s=(i*13+11)%60, m=(i*5+2)%10; return `00:0${m}:${pad(s)}:${pad(f)}`; }
 function thumbOf(w){
@@ -333,64 +330,95 @@ function frameHTML(w,i){
   const t=thumbOf(w);
   return `<div class="frame">${PH}${t?`<img src="${esc(t)}" alt="" width="480" height="360" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:''}<span class="tc">${tcFor(i)}</span><span class="play" aria-hidden="true"></span></div>`;
 }
-
-function renderFilters(){
-  filters.innerHTML="";
-  CATS.forEach(c=>{
-    const b=document.createElement('button'); b.type="button"; b.textContent=c.toUpperCase();
-    b.setAttribute('aria-pressed', String(c===current));
-    b.addEventListener('click',()=>{ current=c; try{localStorage.setItem('works-filter',c)}catch(e){} renderFilters(); render(); });
-    filters.appendChild(b);
-  });
+const artistOfProject=p=>p.artist||OTHER;
+function singles(){
+  const seen=new Set(), list=[];
+  [...SINGLES, ...AUTO.filter(a=>a.single)].forEach(w=>{ const k=w.youtube||w.vimeo; if(k&&seen.has(k)) return; if(k) seen.add(k); list.push(w); });
+  return list.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));
 }
-
 function videosOf(p){
   if(p.picks && p.picks.length) return p.picks.map(v=>typeof v==="string"?{youtube:v}:v);
   if(p.playlist) return AUTO.filter(a=>a.playlist===p.playlist).slice(0,3);
   return [];
 }
+function computeArtists(){
+  const latest={};
+  const bump=(a,d)=>{ if(!a) return; latest[a]=latest[a]&&latest[a]>d?latest[a]:(d||''); };
+  singles().forEach(w=>(w.artists||[]).forEach(a=>bump(a,w.date)));
+  PROJECTS.forEach(p=>{ const a=artistOfProject(p); const v=videosOf(p)[0]; bump(a, a===OTHER?'0':(p.status==='onair'?(v?.date||'9999'):(p.period||'').slice(-7).replace('.','-'))); });
+  ARTISTS=Object.keys(latest).filter(a=>a!==OTHER).sort((x,y)=>latest[y].localeCompare(latest[x]));
+  if(latest[OTHER]!==undefined) ARTISTS.push(OTHER);
+  let saved=null; try{ saved=localStorage.getItem('works-artist'); }catch(e){}
+  if(!["ALL",...ARTISTS].includes(current)) current="ALL";
+  if(saved && ["ALL",...ARTISTS].includes(saved) && current==="ALL") current=saved;
+}
+
+function renderFilters(){
+  filters.innerHTML="";
+  ["ALL",...ARTISTS].forEach(c=>{
+    const b=document.createElement('button'); b.type="button"; b.textContent=c==="ALL"?"ALL":c;
+    b.setAttribute('aria-pressed', String(c===current));
+    b.addEventListener('click',()=>{ current=c; try{localStorage.setItem('works-artist',c)}catch(e){} renderFilters(); render(); });
+    filters.appendChild(b);
+  });
+}
+
+function projectHTML(p,pi){
+  const el=document.createElement('article'); el.className="proj";
+  const vids=videosOf(p);
+  el.innerHTML=`<div class="pinfo">
+      <span class="badge ${p.status==='onair'?'on':''}">${p.status==='onair'?'ON AIR':'ARCHIVE'}</span>
+      <span class="pname2">${esc(p.name)}</span>
+      <span class="prole">${esc(p.role)}</span>
+      ${p.period?`<span class="pperiod">${esc(p.period)}</span>`:''}
+      <a class="plink" href="${esc(p.url)}" target="_blank" rel="noopener">${p.url.includes('playlist')?'再生リストを見る':'チャンネルを見る'} ↗</a>
+    </div><div class="pthumbs"></div>`;
+  const tb=el.querySelector('.pthumbs');
+  (vids.length?vids:[{},{},{}]).slice(0,3).forEach((v,vi)=>{
+    if(!v.youtube && !v.vimeo){ const d=document.createElement('div'); d.className="work"; d.innerHTML=`<div class="frame">${PH}</div>`; tb.appendChild(d); return; }
+    const b=document.createElement('button'); b.type="button"; b.className="work";
+    b.setAttribute('aria-label',`${v.title||p.name}を再生`);
+    b.innerHTML=frameHTML(v,pi*3+vi)+(v.title?`<span class="ttl">${esc(v.title)}</span>`:'');
+    b.addEventListener('click',()=>openWork({...v, title:v.title||p.name, client:p.artist||p.name, role:p.role}));
+    tb.appendChild(b);
+  });
+  return el;
+}
 
 function render(){
-  const match=x=>current==="ALL"||x.cat===current;
-  const ps=PROJECTS.filter(match), ws=SINGLES.filter(match);
-  count.textContent=`${pad(ps.length)} SERIES ・ ${pad(ws.length)} SINGLES`;
-  document.getElementById('proj-block').hidden=!ps.length;
-  document.getElementById('single-block').hidden=!ws.length;
-  document.getElementById('mv-more').hidden=!(current==="ALL"||current==="Music Video");
-
-  projBox.innerHTML="";
-  ps.forEach((p,pi)=>{
-    const el=document.createElement('article'); el.className="proj";
-    const vids=videosOf(p);
-    el.innerHTML=`<div class="pinfo">
-        <span class="badge ${p.status==='onair'?'on':''}">${p.status==='onair'?'ON AIR':'ARCHIVE'}</span>
-        <span class="pname2">${esc(p.name)}</span>
-        ${p.artist?`<span class="partist">${esc(p.artist)}</span>`:''}
-        <span class="prole">${esc(p.role)}</span>
-        ${p.period?`<span class="pperiod">${esc(p.period)}</span>`:''}
-        <a class="plink" href="${esc(p.url)}" target="_blank" rel="noopener">${p.url.includes('playlist')?'再生リストを見る':'チャンネルを見る'} ↗</a>
-      </div><div class="pthumbs"></div>`;
-    const box=el.querySelector('.pthumbs');
-    const slots=vids.length?vids:[{},{},{}];
-    slots.slice(0,3).forEach((v,vi)=>{
-      if(!v.youtube && !v.vimeo){ const d=document.createElement('div'); d.className="work"; d.innerHTML=`<div class="frame">${PH}</div>`; box.appendChild(d); return; }
-      const b=document.createElement('button'); b.type="button"; b.className="work";
-      b.setAttribute('aria-label',`${v.title||p.name}を再生`);
-      b.innerHTML=frameHTML(v,pi*3+vi)+(v.title?`<span class="ttl">${esc(v.title)}</span>`:'');
-      b.addEventListener('click',()=>openWork({...v, title:v.title||p.name, client:p.artist||p.name, cat:p.cat}));
-      box.appendChild(b);
-    });
-    projBox.appendChild(el);
+  box.innerHTML="";
+  const all=singles();
+  const list=current==="ALL"?ARTISTS:[current];
+  let nSeries=0; const vidKeys=new Set();
+  list.forEach((a,ai)=>{
+    const ps=PROJECTS.filter(p=>artistOfProject(p)===a);
+    const ws=all.filter(w=>(w.artists||[]).includes(a));
+    nSeries+=ps.length; ws.forEach(w=>vidKeys.add(w.youtube||w.vimeo||w.title));
+    const sec=document.createElement('section'); sec.className="artist"; sec.setAttribute('aria-label',a);
+    const parts=[ps.length?`${ps.length} SERIES`:'', ws.length?`${ws.length} VIDEOS`:''].filter(Boolean).join(' ・ ');
+    sec.innerHTML=`<div class="ahead"><h3 class="aname">${esc(a)}</h3><span class="acount mono">${parts}</span></div>`;
+    if(ps.length){ const pj=document.createElement('div'); pj.className="projects"; ps.forEach((p,pi)=>pj.appendChild(projectHTML(p,ai*10+pi))); sec.appendChild(pj); }
+    if(ws.length){
+      const g=document.createElement('div'); g.className="grid";
+      const limit=(current==="ALL"&&!open[a])?PREVIEW:ws.length;
+      ws.slice(0,limit).forEach((w,i)=>{
+        const b=document.createElement('button'); b.type="button"; b.className="work";
+        b.setAttribute('aria-label',`${w.title}を再生`);
+        b.innerHTML=frameHTML(w,ai*50+i)+`<div class="meta"><span class="wdate">${fmtDate(w.date)}</span><span class="ttl">${esc(w.title)}</span>${w.role?`<span class="cli">${esc(w.role)}</span>`:''}</div>`;
+        b.addEventListener('click',()=>openWork({...w, client:(w.artists||[]).join(' × ')}));
+        g.appendChild(b);
+      });
+      sec.appendChild(g);
+      if(ws.length>limit){
+        const m=document.createElement('button'); m.type="button"; m.className="showmore";
+        m.textContent=`もっと見る(+${ws.length-limit})`;
+        m.addEventListener('click',()=>{ open[a]=true; render(); });
+        sec.appendChild(m);
+      }
+    }
+    box.appendChild(sec);
   });
-
-  grid.innerHTML="";
-  ws.forEach((w,i)=>{
-    const b=document.createElement('button'); b.type="button"; b.className="work";
-    b.setAttribute('aria-label',`${w.title}(${w.cat})を再生`);
-    b.innerHTML=frameHTML(w,i+20)+`<div class="meta"><span class="cat">${esc(w.cat)}</span><span class="ttl">${esc(w.title)}</span><span class="cli">${esc(w.client)}${w.role?' - '+esc(w.role):''}</span></div>`;
-    b.addEventListener('click',()=>openWork(w));
-    grid.appendChild(b);
-  });
+  count.textContent=`${pad(nSeries)} SERIES ・ ${pad(vidKeys.size)} VIDEOS`;
 }
 
 const dlg=document.getElementById('dlg'), player=document.getElementById('player'), link=document.getElementById('dlg-link');
@@ -472,9 +500,9 @@ addEventListener('scroll',onScroll,{passive:true}); addEventListener('resize',on
   },700);
 })();
 
-renderFilters(); render();
-// 再生リストから毎朝自動で集めた動画(本番サイトでのみ中身が入る)
-fetch('works-auto.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{ if(Array.isArray(a)&&a.length){ AUTO=a.sort((x,y)=>String(y.date).localeCompare(String(x.date))); render(); } }).catch(()=>{});
+computeArtists(); renderFilters(); render();
+// 再生リスト・videos.json から毎朝自動で集めた動画
+fetch('works-auto.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{ if(Array.isArray(a)&&a.length){ AUTO=a.sort((x,y)=>String(y.date).localeCompare(String(x.date))); computeArtists(); renderFilters(); render(); } }).catch(()=>{});
 </script>
 
 </body>

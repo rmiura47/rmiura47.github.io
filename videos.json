@@ -1,68 +1,274 @@
 {
- "_説明": "ポートフォリオに載せる単発の動画(YouTubeの動画ID)。タイトル・チャンネル名・公開日は毎朝自動で取得して works-auto.json の videos に入る",
+ "_説明": "ポートフォリオに載せる単発のYouTube動画。id=動画ID、date=公開日(並び順に使う)、artists=アーティスト名(省略するとチャンネル名から自動で決まる)、role=担当(任意)。タイトルは毎朝自動で取得する",
+ "channel_artist": {
+  "POCKET PANiC OFFICIAL Channel": "POCKET PANiC",
+  "SHY OFFICIAL Channel": "SHY",
+  "峯脇 OFFICIAL Channel": "峯脇",
+  "真•世が世なら!!!": "真・世が世なら!!!",
+  "THE SUPER FRUIT": "THE SUPER FRUIT"
+ },
  "videos": [
-  "wpk9v_PKoEE",
-  "woYm-jFVQ5Y",
-  "cmNjwz3sz1s",
-  "BoN6ko5wKKI",
-  "XAL-yzKE_C0",
-  "g9-QrVQe3-k",
-  "HBtVxk9rGno",
-  "db96efvEUTU",
-  "MxQRX95p-CQ",
-  "V0WWNuMcI6g",
-  "EbV0hyZoSjM",
-  "mV6652_MCSM",
-  "r2llFqFF_ZA",
-  "BxLt385aBI0",
-  "nYX1YrpqQpM",
-  "hqlaStfbdjU",
-  "O0xrIpVMaeo",
-  "GAdEJ_LHWSo",
-  "UWa9lGW6lPc",
-  "kOjMvPPTlj4",
-  "tVHue_Asd-8",
-  "sVrOXtf94-g",
-  "uYNfqKL4ISw",
-  "txMn70yItQw",
-  "RXGnEADc_wQ",
-  "xiQdjcFrd9Q",
-  "BiZO1REJorI",
-  "LDQ32ms9qSE",
-  "bB3A_WgdYrI",
-  "pmyl4Bfo_30",
-  "nN5heLvnsAA",
-  "2aiptF8XMTg",
-  "f8Odmi8Ms00",
-  "b0HVmmi_Syg",
-  "4o1NmYXRJfI",
-  "L1kDrlJrLiU",
-  "-NyWfkaxv_o",
-  "06Ui_FdL4vc",
-  "vJnyHHMNCoU",
-  "l9IkE7e2KPM",
-  "0uNYbMiQ6BA",
-  "2vIZ3klvJVQ",
-  "fZHDk369Ewk",
-  "VVEIYK-C8Ls",
-  "uf82mFI1ML8",
-  "mKrWx54A5hw",
-  "UE9OnnOoIkA",
-  "svKpBfI1RFk",
-  "0rUPfkYHQkg",
-  "HlkQwJLygis",
-  "2v6vI9UltBo",
-  "-fk-cFknUlY",
-  "Q_PHcUN7s7s",
-  "aAUv7ksDTwg",
-  "zMJ5C6wuUsQ",
-  "u4M1WeWNEaY",
-  "daomzf9FNvM",
-  "1pMQHI0FBY8",
-  "ovf58oSHU9M",
-  "ZXWY4r7B4aI",
-  "h5S4JoTggU0",
-  "ma4X5scQDpg",
-  "T42Pgwo29Y0"
+  {
+   "id": "wpk9v_PKoEE",
+   "date": "2026-10-28"
+  },
+  {
+   "id": "woYm-jFVQ5Y",
+   "date": "2026-07-10"
+  },
+  {
+   "id": "cmNjwz3sz1s",
+   "date": "2026-07-15"
+  },
+  {
+   "id": "BoN6ko5wKKI",
+   "date": "2026-07-16"
+  },
+  {
+   "id": "XAL-yzKE_C0",
+   "date": "2026-06-06"
+  },
+  {
+   "id": "g9-QrVQe3-k",
+   "date": "2025-10-01"
+  },
+  {
+   "id": "HBtVxk9rGno",
+   "date": "2026-03-25"
+  },
+  {
+   "id": "db96efvEUTU",
+   "date": "2026-02-16"
+  },
+  {
+   "id": "MxQRX95p-CQ",
+   "date": "2026-02-14"
+  },
+  {
+   "id": "V0WWNuMcI6g",
+   "date": "2026-02-13"
+  },
+  {
+   "id": "EbV0hyZoSjM",
+   "date": "2026-01-09"
+  },
+  {
+   "id": "mV6652_MCSM",
+   "date": "2025-08-08"
+  },
+  {
+   "id": "r2llFqFF_ZA",
+   "date": "2025-06-13"
+  },
+  {
+   "id": "BxLt385aBI0",
+   "date": "2025-06-01"
+  },
+  {
+   "id": "nYX1YrpqQpM",
+   "date": "2025-03-03"
+  },
+  {
+   "id": "hqlaStfbdjU",
+   "date": "2025-03-04"
+  },
+  {
+   "id": "O0xrIpVMaeo",
+   "date": "2024-11-08"
+  },
+  {
+   "id": "GAdEJ_LHWSo",
+   "date": "2026-10-14"
+  },
+  {
+   "id": "UWa9lGW6lPc",
+   "date": "2026-10-02"
+  },
+  {
+   "id": "kOjMvPPTlj4",
+   "date": "2026-05-21"
+  },
+  {
+   "id": "tVHue_Asd-8",
+   "date": "2026-03-03"
+  },
+  {
+   "id": "sVrOXtf94-g",
+   "date": "2026-02-03"
+  },
+  {
+   "id": "uYNfqKL4ISw",
+   "date": "2025-08-30"
+  },
+  {
+   "id": "txMn70yItQw",
+   "date": "2025-07-24"
+  },
+  {
+   "id": "RXGnEADc_wQ",
+   "date": "2026-10-30"
+  },
+  {
+   "id": "xiQdjcFrd9Q",
+   "date": "2026-10-18"
+  },
+  {
+   "id": "BiZO1REJorI",
+   "date": "2026-09-13"
+  },
+  {
+   "id": "LDQ32ms9qSE",
+   "date": "2026-05-22"
+  },
+  {
+   "id": "bB3A_WgdYrI",
+   "date": "2026-05-10"
+  },
+  {
+   "id": "pmyl4Bfo_30",
+   "date": "2026-02-22"
+  },
+  {
+   "id": "nN5heLvnsAA",
+   "date": "2026-01-31"
+  },
+  {
+   "id": "2aiptF8XMTg",
+   "date": "2025-12-27"
+  },
+  {
+   "id": "f8Odmi8Ms00",
+   "date": "2025-12-26"
+  },
+  {
+   "id": "b0HVmmi_Syg",
+   "date": "2025-12-25",
+   "artists": [
+    "峯脇"
+   ]
+  },
+  {
+   "id": "4o1NmYXRJfI",
+   "date": "2025-12-24",
+   "artists": [
+    "POCKET PANiC"
+   ]
+  },
+  {
+   "id": "L1kDrlJrLiU",
+   "date": "2025-11-07",
+   "artists": [
+    "POCKET PANiC",
+    "峯脇"
+   ]
+  },
+  {
+   "id": "-NyWfkaxv_o",
+   "date": "2025-10-24"
+  },
+  {
+   "id": "06Ui_FdL4vc",
+   "date": "2025-10-17"
+  },
+  {
+   "id": "vJnyHHMNCoU",
+   "date": "2025-10-11"
+  },
+  {
+   "id": "l9IkE7e2KPM",
+   "date": "2025-09-19"
+  },
+  {
+   "id": "0uNYbMiQ6BA",
+   "date": "2025-09-14"
+  },
+  {
+   "id": "2vIZ3klvJVQ",
+   "date": "2025-09-06"
+  },
+  {
+   "id": "fZHDk369Ewk",
+   "date": "2025-08-09"
+  },
+  {
+   "id": "VVEIYK-C8Ls",
+   "date": "2025-07-16"
+  },
+  {
+   "id": "uf82mFI1ML8",
+   "date": "2025-07-09"
+  },
+  {
+   "id": "mKrWx54A5hw",
+   "date": "2025-06-18"
+  },
+  {
+   "id": "UE9OnnOoIkA",
+   "date": "2025-06-06"
+  },
+  {
+   "id": "svKpBfI1RFk",
+   "date": "2025-05-23"
+  },
+  {
+   "id": "0rUPfkYHQkg",
+   "date": "2025-05-16"
+  },
+  {
+   "id": "HlkQwJLygis",
+   "date": "2025-05-09"
+  },
+  {
+   "id": "2v6vI9UltBo",
+   "date": "2025-04-25"
+  },
+  {
+   "id": "-fk-cFknUlY",
+   "date": "2025-09-19"
+  },
+  {
+   "id": "Q_PHcUN7s7s",
+   "date": "2025-09-14"
+  },
+  {
+   "id": "aAUv7ksDTwg",
+   "date": "2025-09-06"
+  },
+  {
+   "id": "zMJ5C6wuUsQ",
+   "date": "2025-08-09"
+  },
+  {
+   "id": "u4M1WeWNEaY",
+   "date": "2025-07-16"
+  },
+  {
+   "id": "daomzf9FNvM",
+   "date": "2025-06-18"
+  },
+  {
+   "id": "1pMQHI0FBY8",
+   "date": "2025-06-06"
+  },
+  {
+   "id": "ovf58oSHU9M",
+   "date": "2025-05-16"
+  },
+  {
+   "id": "ZXWY4r7B4aI",
+   "date": "2025-05-09"
+  },
+  {
+   "id": "h5S4JoTggU0",
+   "date": "2025-04-25"
+  },
+  {
+   "id": "ma4X5scQDpg",
+   "date": "2025-02-24"
+  },
+  {
+   "id": "T42Pgwo29Y0",
+   "date": "2025-02-24"
+  }
  ]
 }
