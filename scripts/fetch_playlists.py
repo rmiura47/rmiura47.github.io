@@ -204,6 +204,29 @@ def main():
             out.extend({"playlist": pid, **it} for it in items)
         except Exception as ex:  # 1つの再生リストが失敗しても他は続ける
             failed.append(f"{pid}: {ex}")
+    # 単発の動画(videos.json)。一度取れた情報は使い回す
+    prev = {}
+    try:
+        for w in json.loads((ROOT / "works-auto.json").read_text(encoding="utf-8")):
+            if w.get("single") and w.get("title") and w.get("date"):
+                prev[w["youtube"]] = w
+    except Exception:
+        pass
+    vconf_path = ROOT / "videos.json"
+    if vconf_path.exists():
+        vids = json.loads(vconf_path.read_text(encoding="utf-8")).get("videos", [])
+        got = 0
+        for vid in vids:
+            if vid in prev:
+                out.append(prev[vid]); got += 1
+                continue
+            try:
+                info = video_info(vid)
+                out.append({"playlist": "", "single": True, **info}); got += 1
+            except Exception as ex:
+                failed.append(f"動画 {vid}: {ex}")
+            time.sleep(0.4)
+        print(f"単発の動画: {got}/{len(vids)}本")
     for f in failed:
         print("取得に失敗:", f)
     if not out:
