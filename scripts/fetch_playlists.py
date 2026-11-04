@@ -246,7 +246,9 @@ def main():
             have_titles = {norm(w.get("title", "")) for w in out if w.get("playlist") == pl}
             added = 0
             for it in uploads_cache[up]:
-                if norm(kw) in norm(it.get("title", "")) and it["youtube"] not in have and norm(it.get("title", "")) not in have_titles:
+                # ハッシュタグ(#〜)を除いたタイトルにキーワードがあるものだけ(ショート動画を除くため)
+                body = re.sub(r"#\S+", " ", it.get("title", ""))
+                if norm(kw) in norm(body) and it["youtube"] not in have and norm(it.get("title", "")) not in have_titles:
                     out.append({"playlist": pl, **{k: v for k, v in it.items() if k != "order"}, "order": 0})
                     have.add(it["youtube"]); added += 1
             print(f"{kw}: チャンネルから{added}本を追加")
