@@ -88,10 +88,16 @@ section{scroll-margin-top:24px}
 .filters button[aria-pressed="true"]:hover{color:var(--ink)}
 
 /* works */
-.artist{display:flex;flex-direction:column;gap:22px;margin-bottom:72px}
-.ahead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.aname{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(22px,3.2vw,32px);letter-spacing:.08em;line-height:1.2}
-.acount{font-size:12px;color:var(--mute)}
+.wcat{display:flex;flex-direction:column;gap:28px;margin-bottom:88px}
+.chead{display:flex;flex-direction:column;gap:6px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.cname{margin:0;font-family:var(--f-display);font-weight:500;font-size:clamp(24px,3.6vw,36px);letter-spacing:.1em;line-height:1.2}
+.csub{font-size:13px;color:var(--mute);letter-spacing:.08em}
+.csub b{font:500 12px var(--f-mono);color:var(--mute);letter-spacing:.1em;margin-left:10px}
+.agroup{display:flex;flex-direction:column;gap:16px}
+.aname{margin:0;display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:500;font-size:clamp(16px,2vw,19px);letter-spacing:.08em}
+.aname::before{content:"";width:0;height:0;border-left:7px solid var(--red);border-top:5px solid transparent;border-bottom:5px solid transparent}
+.aname span{font:12px var(--f-mono);color:var(--mute);letter-spacing:.08em}
+.statuslabel{margin:8px 0 -12px;font:500 12px var(--f-mono);color:var(--mute);letter-spacing:.16em}
 .wdate{font:12px var(--f-mono);color:var(--mute);letter-spacing:.06em}
 .showmore{align-self:center;font:500 12px var(--f-mono);letter-spacing:.12em;color:var(--fg);background:transparent;border:1px solid var(--line);padding:12px 22px;cursor:pointer;min-height:44px}
 .showmore:hover{border-color:var(--mute)}
@@ -209,7 +215,7 @@ dialog::backdrop{background:rgba(0,0,0,.86)}
 
   <section id="works">
     <div class="sh"><h2>WORKS</h2><span class="mono" id="count"></span></div>
-    <div class="filters" role="group" aria-label="アーティストで絞り込む" id="filters"></div>
+    <div class="filters" role="group" aria-label="関わり方で絞り込む" id="filters"></div>
     <div id="artists"></div>
     <p class="more">ほか、MV・リリックビデオ・YouTube動画多数</p>
   </section>
@@ -321,11 +327,16 @@ const SINGLES = [
   {artists:["アップアップガールズ"], title:"にきちゃんのドキュメンタリー #5 @JAM EXPO 2026出演の裏側", role:"編集", date:"2026-10-14", youtube:"nZ5-6wUTLcM"},
   {artists:["かたこと"], title:"かたこと「恋をして」Lyric Video", role:"企画・デザイン・編集・3DCG", date:"2024-02-14", youtube:"26umQwAqHRk"},
 ];
-const OTHER = "OTHER CHANNELS";   // アーティストに属さないチャンネル
-const PREVIEW = 6;                // 一覧(ALL)で各アーティストに最初に出す本数
+// 作品の大きな括り(どう関わったか)。role にキーワードが入っていればその括りに入る(cat を書けば手動で指定も可)
+const CATEGORIES = [
+  {id:"mg",   name:"MOTION GRAPHICS", sub:"映像制作・モーショングラフィックス", match:r=>/モーショングラフィックス|3DCG|映像制作/.test(r), defaultRole:"映像制作・モーショングラフィックス"},
+  {id:"film", name:"FILM & EDIT",     sub:"撮影・編集",                         match:()=>true, defaultRole:"撮影・編集"},
+];
+const SERIES = {id:"series", name:"CHANNELS & SERIES", sub:"レギュラー・元レギュラー案件"};
+const PREVIEW = 3;   // ALLのとき、各アーティストに最初に出す本数
 
-let AUTO = [], ARTISTS = [], current = "ALL";
-const open = {};  // 「もっと見る」を開いたアーティスト
+let AUTO = [], current = "ALL";
+const open = {};
 const box=document.getElementById('artists'), filters=document.getElementById('filters'), count=document.getElementById('count');
 const esc=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pad=n=>String(n).padStart(2,'0');
@@ -342,35 +353,30 @@ function frameHTML(w,i){
   const t=thumbOf(w);
   return `<div class="frame">${PH}${t?`<img src="${esc(t)}" alt="" width="480" height="360" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`:''}<span class="tc">${tcFor(i)}</span><span class="play" aria-hidden="true"></span></div>`;
 }
-const artistOfProject=p=>p.artist||OTHER;
 function singles(){
   const seen=new Set(), list=[];
   [...SINGLES, ...AUTO.filter(a=>a.single)].forEach(w=>{ const k=w.youtube||w.vimeo; if(k&&seen.has(k)) return; if(k) seen.add(k); list.push(w); });
   return list.sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')));
 }
+const catOf=w=>w.cat ? CATEGORIES.find(c=>c.id===w.cat) : CATEGORIES.find(c=>c.match(w.role||''));
 function videosOf(p){
   if(p.picks && p.picks.length) return p.picks.map(v=>typeof v==="string"?{youtube:v}:v);
   if(p.playlist) return AUTO.filter(a=>a.playlist===p.playlist).slice(0,3);
   return [];
 }
-function computeArtists(){
-  const latest={};
-  const bump=(a,d)=>{ if(!a) return; latest[a]=latest[a]&&latest[a]>d?latest[a]:(d||''); };
-  singles().forEach(w=>(w.artists||[]).forEach(a=>bump(a,w.date)));
-  PROJECTS.forEach(p=>{ const a=artistOfProject(p); const v=videosOf(p)[0]; bump(a, a===OTHER?'0':(p.status==='onair'?(v?.date||'9999'):(p.period||'').slice(-7).replace('.','-'))); });
-  ARTISTS=Object.keys(latest).filter(a=>a!==OTHER).sort((x,y)=>latest[y].localeCompare(latest[x]));
-  if(latest[OTHER]!==undefined) ARTISTS.push(OTHER);
-  let saved=null; try{ saved=localStorage.getItem('works-artist'); }catch(e){}
-  if(!["ALL",...ARTISTS].includes(current)) current="ALL";
-  if(saved && ["ALL",...ARTISTS].includes(saved) && current==="ALL") current=saved;
-}
+const TABS=()=>["ALL", SERIES, ...CATEGORIES.filter(c=>singles().some(w=>catOf(w)===c))].map(t=>t==="ALL"?{id:"ALL",name:"ALL"}:t);
 
 function renderFilters(){
   filters.innerHTML="";
-  ["ALL",...ARTISTS].forEach(c=>{
-    const b=document.createElement('button'); b.type="button"; b.textContent=c==="ALL"?"ALL":c;
-    b.setAttribute('aria-pressed', String(c===current));
-    b.addEventListener('click',()=>{ current=c; try{localStorage.setItem('works-artist',c)}catch(e){} renderFilters(); render(); });
+  const tabs=TABS();
+  let saved=null; try{ saved=localStorage.getItem('works-cat'); }catch(e){}
+  if(!tabs.some(t=>t.id===current)) current="ALL";
+  if(saved && current==="ALL" && tabs.some(t=>t.id===saved) && !renderFilters.done) current=saved;
+  renderFilters.done=true;
+  tabs.forEach(t=>{
+    const b=document.createElement('button'); b.type="button"; b.textContent=t.name;
+    b.setAttribute('aria-pressed', String(t.id===current));
+    b.addEventListener('click',()=>{ current=t.id; try{localStorage.setItem('works-cat',t.id)}catch(e){} renderFilters(); render(); });
     filters.appendChild(b);
   });
 }
@@ -381,6 +387,7 @@ function projectHTML(p,pi){
   el.innerHTML=`<div class="pinfo">
       <span class="badge ${p.status==='onair'?'on':''}">${p.status==='onair'?'ON AIR':'ARCHIVE'}</span>
       <span class="pname2">${esc(p.name)}</span>
+      ${p.artist?`<span class="partist">${esc(p.artist)}</span>`:''}
       <span class="prole">${esc(p.role)}</span>
       ${p.period?`<span class="pperiod">${esc(p.period)}</span>`:''}
       <a class="plink" href="${esc(p.url)}" target="_blank" rel="noopener">${p.url.includes('playlist')?'再生リストを見る':'チャンネルを見る'} ↗</a>
@@ -396,41 +403,57 @@ function projectHTML(p,pi){
   });
   return el;
 }
+function catHead(name,sub,n){ return `<div class="chead"><h3 class="cname">${esc(name)}</h3><span class="csub">${esc(sub)}<b>${n}</b></span></div>`; }
 
+function renderSeries(){
+  const sec=document.createElement('section'); sec.className="wcat";
+  sec.innerHTML=catHead(SERIES.name, SERIES.sub, `${pad(PROJECTS.length)} SERIES`);
+  [["onair","ON AIR ・ 現在担当中"],["archive","ARCHIVE ・ 過去に担当"]].forEach(([st,label],si)=>{
+    const ps=PROJECTS.filter(p=>p.status===st); if(!ps.length) return;
+    const l=document.createElement('p'); l.className="statuslabel"; l.textContent=label; sec.appendChild(l);
+    const pj=document.createElement('div'); pj.className="projects"; ps.forEach((p,pi)=>pj.appendChild(projectHTML(p,si*10+pi))); sec.appendChild(pj);
+  });
+  box.appendChild(sec);
+}
+function renderCategory(c,ci,all){
+  const ws=all.filter(w=>catOf(w)===c); if(!ws.length) return 0;
+  const sec=document.createElement('section'); sec.className="wcat";
+  sec.innerHTML=catHead(c.name, c.sub, `${pad(ws.length)} VIDEOS`);
+  // アーティストごと(最新の作品が新しい順)
+  const order=[]; ws.forEach(w=>(w.artists||["OTHER"]).forEach(a=>{ if(!order.includes(a)) order.push(a); }));
+  order.forEach((a,ai)=>{
+    const aw=ws.filter(w=>(w.artists||["OTHER"]).includes(a));
+    const g=document.createElement('div'); g.className="agroup";
+    g.innerHTML=`<h4 class="aname">${esc(a)}<span>${aw.length}</span></h4>`;
+    const grid=document.createElement('div'); grid.className="grid";
+    const key=c.id+'|'+a, limit=(current==="ALL"&&!open[key])?PREVIEW:aw.length;
+    aw.slice(0,limit).forEach((w,i)=>{
+      const b=document.createElement('button'); b.type="button"; b.className="work";
+      b.setAttribute('aria-label',`${w.title}を再生`);
+      const extra=w.role&&w.role!==c.defaultRole?w.role:'';
+      b.innerHTML=frameHTML(w,ci*300+ai*20+i)+`<div class="meta"><span class="wdate">${fmtDate(w.date)}</span><span class="ttl">${esc(w.title)}</span>${extra?`<span class="cli">${esc(extra)}</span>`:''}</div>`;
+      b.addEventListener('click',()=>openWork({...w, client:(w.artists||[]).join(' × ')}));
+      grid.appendChild(b);
+    });
+    g.appendChild(grid);
+    if(aw.length>limit){
+      const m=document.createElement('button'); m.type="button"; m.className="showmore";
+      m.textContent=`もっと見る(+${aw.length-limit})`;
+      m.addEventListener('click',()=>{ open[key]=true; render(); });
+      g.appendChild(m);
+    }
+    sec.appendChild(g);
+  });
+  box.appendChild(sec);
+  return ws.length;
+}
 function render(){
   box.innerHTML="";
   const all=singles();
-  const list=current==="ALL"?ARTISTS:[current];
-  let nSeries=0; const vidKeys=new Set();
-  list.forEach((a,ai)=>{
-    const ps=PROJECTS.filter(p=>artistOfProject(p)===a);
-    const ws=all.filter(w=>(w.artists||[]).includes(a));
-    nSeries+=ps.length; ws.forEach(w=>vidKeys.add(w.youtube||w.vimeo||w.title));
-    const sec=document.createElement('section'); sec.className="artist"; sec.setAttribute('aria-label',a);
-    const parts=[ps.length?`${ps.length} SERIES`:'', ws.length?`${ws.length} VIDEOS`:''].filter(Boolean).join(' ・ ');
-    sec.innerHTML=`<div class="ahead"><h3 class="aname">${esc(a)}</h3><span class="acount mono">${parts}</span></div>`;
-    if(ps.length){ const pj=document.createElement('div'); pj.className="projects"; ps.forEach((p,pi)=>pj.appendChild(projectHTML(p,ai*10+pi))); sec.appendChild(pj); }
-    if(ws.length){
-      const g=document.createElement('div'); g.className="grid";
-      const limit=(current==="ALL"&&!open[a])?PREVIEW:ws.length;
-      ws.slice(0,limit).forEach((w,i)=>{
-        const b=document.createElement('button'); b.type="button"; b.className="work";
-        b.setAttribute('aria-label',`${w.title}を再生`);
-        b.innerHTML=frameHTML(w,ai*50+i)+`<div class="meta"><span class="wdate">${fmtDate(w.date)}</span><span class="ttl">${esc(w.title)}</span>${w.role?`<span class="cli">${esc(w.role)}</span>`:''}</div>`;
-        b.addEventListener('click',()=>openWork({...w, client:(w.artists||[]).join(' × ')}));
-        g.appendChild(b);
-      });
-      sec.appendChild(g);
-      if(ws.length>limit){
-        const m=document.createElement('button'); m.type="button"; m.className="showmore";
-        m.textContent=`もっと見る(+${ws.length-limit})`;
-        m.addEventListener('click',()=>{ open[a]=true; render(); });
-        sec.appendChild(m);
-      }
-    }
-    box.appendChild(sec);
-  });
-  count.textContent=`${pad(nSeries)} SERIES ・ ${pad(vidKeys.size)} VIDEOS`;
+  let n=0;
+  if(current==="ALL"||current==="series") renderSeries();
+  CATEGORIES.forEach((c,ci)=>{ if(current==="ALL"||current===c.id) n+=renderCategory(c,ci,all); });
+  count.textContent=`${pad(PROJECTS.length)} SERIES ・ ${pad(all.length)} VIDEOS`;
 }
 
 const dlg=document.getElementById('dlg'), player=document.getElementById('player'), link=document.getElementById('dlg-link');
@@ -512,9 +535,9 @@ addEventListener('scroll',onScroll,{passive:true}); addEventListener('resize',on
   },700);
 })();
 
-computeArtists(); renderFilters(); render();
+renderFilters(); render();
 // 再生リスト・videos.json から毎朝自動で集めた動画
-fetch('works-auto.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{ if(Array.isArray(a)&&a.length){ AUTO=a.sort((x,y)=>String(y.date).localeCompare(String(x.date))); computeArtists(); renderFilters(); render(); } }).catch(()=>{});
+fetch('works-auto.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{ if(Array.isArray(a)&&a.length){ AUTO=a.sort((x,y)=>String(y.date).localeCompare(String(x.date))); renderFilters(); render(); } }).catch(()=>{});
 </script>
 
 </body>
