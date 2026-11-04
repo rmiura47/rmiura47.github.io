@@ -255,6 +255,14 @@ def main():
         except Exception as ex:
             failed.append(f"{kw}: {ex}")
 
+    # 手で指定したシリーズの動画(重複は除く)
+    for e in conf.get("extra_videos", []):
+        pl, vid = e.get("playlist"), e.get("id")
+        if not (pl and vid):
+            continue
+        out[:] = [w for w in out if not (w.get("playlist") == pl and w.get("youtube") == vid)]
+        out.append({"playlist": pl, "youtube": vid, "title": e.get("title", ""), "client": e.get("client", ""), "date": e.get("date", ""), "order": 0})
+
     # 単発の動画(videos.json)。一度取れた情報は使い回す
     prev = {}
     try:

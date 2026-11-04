@@ -16,5 +16,26 @@
       "keyword": "A way to Light",
       "playlist": "PL1w723cdAy85KaCbnfLSZtIp9aQxMQ2hi"
     }
+  ],
+  "_説明3": "extra_videos: 再生リストにもタイトルにも入っていないけどシリーズに含める動画(id・タイトル・公開日を手で書く)",
+  "extra_videos": [
+    {
+      "playlist": "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda",
+      "id": "-oGfEEjmJwI",
+      "title": "【BANGERS】ゆるふわマイペースRENを理解しているのは誰だ!?メンバー王第５回REN王!!!",
+      "date": "2026-11-04"
+    },
+    {
+      "playlist": "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda",
+      "id": "V9Qcgurw3sY",
+      "title": "お題を伝えるだけのゲームで大騒ぎする男たちwww【おしえてポン！】",
+      "date": "2026-10-28"
+    },
+    {
+      "playlist": "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda",
+      "id": "FD18QQrPwsQ",
+      "title": "【超難問】JIN画伯の絵スチャーゲーム、初見で解けたら天才です",
+      "date": "2026-10-22"
+    }
   ]
 }
