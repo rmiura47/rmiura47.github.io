@@ -231,6 +231,26 @@ def main():
             out.extend({"playlist": pid, **it} for it in items)
         except Exception as ex:  # 1つの再生リストが失敗しても他は続ける
             failed.append(f"{pid}: {ex}")
+    # チャンネルの動画から、タイトルにキーワードを含むものをシリーズに足す(再生リストと重複は除く)
+    uploads_cache = {}
+    norm = lambda t: re.sub(r"\s+", "", t).lower()
+    for f in conf.get("channel_filters", []):
+        up, kw, pl = f.get("uploads"), f.get("keyword", ""), f.get("playlist")
+        if not (up and kw and pl):
+            continue
+        try:
+            if up not in uploads_cache:
+                uploads_cache[up] = from_page(up)
+            have = {w["youtube"] for w in out if w.get("playlist") == pl}
+            added = 0
+            for it in uploads_cache[up]:
+                if norm(kw) in norm(it.get("title", "")) and it["youtube"] not in have:
+                    out.append({"playlist": pl, **{k: v for k, v in it.items() if k != "order"}, "order": 0})
+                    have.add(it["youtube"]); added += 1
+            print(f"{kw}: チャンネルから{added}本を追加")
+        except Exception as ex:
+            failed.append(f"{kw}: {ex}")
+
     # 単発の動画(videos.json)。一度取れた情報は使い回す
     prev = {}
     try:

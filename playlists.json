@@ -3,5 +3,18 @@
   "playlists": [
     "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda",
     "PL1w723cdAy85KaCbnfLSZtIp9aQxMQ2hi"
+  ],
+  "_説明2": "channel_filters: チャンネルのアップロード一覧から、タイトルにkeywordを含む動画も同じシリーズ(playlist)に入れる。再生リストと重複するものは省く",
+  "channel_filters": [
+    {
+      "uploads": "UUaBBhmMIjwFm1IHc2aVwY0Q",
+      "keyword": "BGちゃんねる",
+      "playlist": "PL1w723cdAy85v62TaPY8UJ3PObLcKpBda"
+    },
+    {
+      "uploads": "UUaBBhmMIjwFm1IHc2aVwY0Q",
+      "keyword": "A way to Light",
+      "playlist": "PL1w723cdAy85KaCbnfLSZtIp9aQxMQ2hi"
+    }
   ]
 }
